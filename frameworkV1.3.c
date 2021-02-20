@@ -1,129 +1,99 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define DATA_FILE_NAME "data1.dat"
+#define DATA_FILE_NAME "data.dat"
 #define FIELD_FILE_NAME "fields.cfg"
 #define MENU_FILE_NAME "menu.cfg"
+#define MENU_LINE_LENGTH 20
+#define FIELD_LINE_LENGTH 20
 #define LINE_LENGTH 20
 
 void showMenu();
 void create();
 void read();
 void exitProgram();
-
-int getFieldCount();
-char** storeFieldList();
-char** storeMenuList();
-int countOfMenu;
+int getLineCount();
+char** storeLinesIntoArray();
 
 void main()
 {
-	int countOfField = getFieldCount();
-	char **fieldItem = storeFieldList(countOfField);
-	char **menuItem = storeMenuList();
-	showMenu(menuItem, fieldItem, countOfField);
+	int countOfFields = getLineCount(FIELD_FILE_NAME);
+	int countOfMenuLines = getLineCount(MENU_FILE_NAME);
+	char **arrayOfFieldLines = storeLinesIntoArray(FIELD_FILE_NAME);
+	char **arrayOfMenuLines = storeLinesIntoArray(MENU_FILE_NAME);
+	showMenu();
 }
 
-int getFieldCount()
+int getLineCount(char* FILE_NAME)
 {
-	int fieldCounter = 0;
-	FILE *fpField; 
-	char fieldName[LINE_LENGTH];
-	fpField = fopen(FIELD_FILE_NAME, "r");
-	if(fpField == NULL)
+	int lineCounter = 0;
+	FILE *fpText; 
+	char line[LINE_LENGTH];
+	fpText = fopen(FILE_NAME, "r");
+	if(fpText == NULL)
 	{
 		printf("Error!");
 		exit(0);
 	}
 	else
 	{
-		while(fgets(fieldName, sizeof(fieldName), fpField) > 0)
+		while(fgets(line, sizeof(line), fpText) > 0)
 		{
-			fieldCounter = fieldCounter + 1;
+			lineCounter = lineCounter + 1;
 		}
 	}
-	fclose(fpField);
-	return fieldCounter;
+	fclose(fpText);
+	return lineCounter;
 }
 
-char** storeFieldList(int countOfField)
+char** storeLinesIntoArray(char* FILE_NAME)
 {
-	char **fieldList;
-	int counter = 0;
-	FILE *fpField; 
-	char fieldLine[LINE_LENGTH];
-	fpField = fopen(FIELD_FILE_NAME, "r");
-	if(fpField == NULL)
+	char **list;
+	int lineCounter = 0;
+	FILE *fpText; 
+	char line[LINE_LENGTH];
+	int countOfLines = getLineCount(FILE_NAME);
+	fpText = fopen(FILE_NAME, "r");
+	if(fpText == NULL)
 	{
 		printf("Error!");
 		exit(0);
 	}
 	else
 	{
-		fieldList = (char**)malloc(countOfField * LINE_LENGTH);
-		fseek(fpField, 0, SEEK_SET);
-		while(fgets(fieldLine, sizeof(fieldLine), fpField) > 0)
+		list = (char**)malloc(countOfLines * sizeof(char*));
+		while(fgets(line, sizeof(line), fpText) > 0)
 		{
-			fieldLine[strlen(fieldLine) - 1] = '\0';
-			fieldList[counter] = (char*)malloc(LINE_LENGTH);
-			strcpy(fieldList[counter], fieldLine);
-			counter++;
+			line[strlen(line) - 1] = '\0';
+			list[lineCounter] = (char*)malloc(LINE_LENGTH);
+			strcpy(list[lineCounter], line);
+			lineCounter++;
 		}
 	}
-	fclose(fpField);
-	return fieldList;
+	fclose(fpText);
+	return list;
 }
 
-char** storeMenuList()
-{
-	char **menuList;
-	countOfMenu = 0;
-	int counter = 0;
-	FILE *fpMenu; 
-	char menuLine[LINE_LENGTH];
-	fpMenu = fopen(MENU_FILE_NAME, "r");
-	if(fpMenu == NULL)
-	{
-		printf("Error!");
-		exit(0);
-	}
-	else
-	{
-		while(fgets(menuLine, sizeof(menuLine), fpMenu) > 0)
-		{
-			countOfMenu = countOfMenu + 1;
-		}
-		menuList = (char**)malloc(countOfMenu * LINE_LENGTH);
-		fseek(fpMenu, 0, SEEK_SET);
-		while(fgets(menuLine, sizeof(menuLine), fpMenu) > 0)
-		{
-			menuList[counter] = (char*)malloc(LINE_LENGTH);
-			strcpy(menuList[counter], menuLine);
-			counter++;
-		}
-	}
-	fclose(fpMenu);
-	return menuList;
-}
-
-void showMenu(char **menuItem, char **fieldItem, int countOfField)
+void showMenu()
 {
 	int option;
 	while(1)
 	{
-		for(int counter = 0; counter < countOfMenu; counter++)
+		int countOfMenuLines = getLineCount(MENU_FILE_NAME);
+		char **arrayOfMenuLines = storeLinesIntoArray(MENU_FILE_NAME);
+		for(int counter = 0; counter < countOfMenuLines; counter++)
 		{
-			printf("%s", menuItem[counter]);
+			printf("%s\n", arrayOfMenuLines[counter]);
 		}
 		printf("\nEnter your option: ");
 		scanf("%d", &option);
 		switch(option)
 		{
 			case 1:
-				create(countOfField, fieldItem);
+				create();
 				break;
 			case 2:
-				read(countOfField, fieldItem);
+				read();
 				break;
 			case 3:
 				exitProgram();
@@ -135,12 +105,13 @@ void showMenu(char **menuItem, char **fieldItem, int countOfField)
 	}
 }
 
-void create(int countOfField, char **fieldItem)
+void create()
 {  
 	FILE *fpData;
 	fpData = fopen(DATA_FILE_NAME, "a");
-	char fieldName[LINE_LENGTH];
-	char fieldValue[LINE_LENGTH];
+	char fieldValue[FIELD_LINE_LENGTH];
+	int countOfFields = getLineCount(FIELD_FILE_NAME);
+	char **arrayOfFieldLines = storeLinesIntoArray(FIELD_FILE_NAME);
 	if(fpData == NULL)
 	{
 		printf("Error!");
@@ -148,26 +119,27 @@ void create(int countOfField, char **fieldItem)
 	}
 	else
 	{
-		for(int counter = 0; counter < countOfField; counter++)
+		for(int counter = 0; counter < countOfFields; counter++)
 		{
 			fflush(stdin);
-			printf("Enter %s: ", fieldItem[counter]);
+			printf("Enter %s: ", arrayOfFieldLines[counter]);
 			gets(fieldValue);
-			fwrite(fieldValue, LINE_LENGTH, 1, fpData);
+			fwrite(fieldValue, FIELD_LINE_LENGTH, 1, fpData);
 		}
 	}
 	fclose(fpData);
 }
 
-void read(int countOfField, char **fieldItem)
+void read()
 {
 	FILE *fpData;
 	fpData = fopen(DATA_FILE_NAME, "r");
-	char fieldValue[LINE_LENGTH];
-	int counter;
-	for(counter = 0; counter < countOfField; counter++)
+	char fieldValue[FIELD_LINE_LENGTH];
+	int countOfFields = getLineCount(FIELD_FILE_NAME);
+	char **arrayOfFieldLines = storeLinesIntoArray(FIELD_FILE_NAME);
+	for(int counter = 0; counter < countOfFields; counter++)
 	{
-		printf("%s\t", fieldItem[counter]);
+		printf("%s\t", arrayOfFieldLines[counter]);
 	}
 	printf("\n");
 	if(fpData == NULL)
@@ -177,12 +149,12 @@ void read(int countOfField, char **fieldItem)
 	}
 	else
 	{	
-		counter = 0;
-		while(fread(fieldValue, LINE_LENGTH, 1, fpData) > 0)
+		int counter = 0;
+		while(fread(fieldValue, FIELD_LINE_LENGTH, 1, fpData) > 0)
 		{
 			printf("%s\t", fieldValue);
 			counter = counter + 1;
-			if(counter == countOfField)
+			if(counter == countOfFields)
 			{
 				printf("\n");
 				counter = 0;
